@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ліза, ти любиш мене? 💖</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #0d0417 0%, #220731 35%, #3d0a43 70%, #12011d 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .font-handwriting {
+            font-family: 'Caveat', cursive;
+        }
+
+        /* Glassmorphism Styling */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(236, 72, 153, 0.15);
+        }
+
+        .glass-card {
+            background: rgba(18, 8, 30, 0.82);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(244, 114, 182, 0.25);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(236, 72, 153, 0.25);
+        }
+
+        /* Neon & Glow Effects */
+        .neon-text {
+            text-shadow: 0 0 10px rgba(244, 114, 182, 0.8), 0 0 25px rgba(244, 114, 182, 0.5), 0 0 40px rgba(236, 72, 153, 0.3);
+        }
+
+        .neon-btn-yes {
+            background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.6), 0 0 45px rgba(168, 85, 247, 0.4);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+        }
+
+        .neon-btn-yes:hover {
+            box-shadow: 0 0 35px rgba(236, 72, 153, 0.9), 0 0 60px rgba(168, 85, 247, 0.7);
+        }
+
+        /* Background Particle Canvas */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .heart-particle {
+            position: absolute;
+            color: rgba(244, 114, 182, 0.75);
+            pointer-events: none;
+            animation: fall linear infinite;
+            filter: drop-shadow(0 0 5px rgba(236, 72, 153, 0.5));
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10vh) rotate(0deg) scale(0.8);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(105vh) rotate(360deg) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .pulse-heart {
+            animation: heartPulse 1.4s infinite ease-in-out;
+        }
+
+        @keyframes heartPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.8)); }
+            50% { transform: scale(1.18); filter: drop-shadow(0 0 30px rgba(236, 72, 153, 1)); }
+        }
+
+        #btn-no {
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        #toast {
+            transition: all 0.4s ease;
+            transform: translateY(-100px);
+            opacity: 0;
+        }
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .input-glass {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(244, 114, 182, 0.3);
+            transition: all 0.3s ease;
+        }
+        .input-glass:focus {
+            border-color: rgba(236, 72, 153, 0.8);
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 relative min-h-screen select-none">
+
+    <!-- Canvas для зіркового фону -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Тост сповіщення -->
+    <div id="toast" class="fixed top-5 z-50 glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 border-pink-400/40 shadow-2xl">
+        <i class="fas fa-check-circle text-green-400 text-lg"></i>
+        <span id="toast-msg" class="text-xs sm:text-sm font-semibold text-white">Посилання скопійовано!</span>
+    </div>
+
+
+    <!-- ================= 1. ФЕЙКОВИЙ ЕКРАН ВХОДУ / ГЕНЕРАТОР ================= -->
+    <div id="screen-login" class="z-10 w-full max-w-md glass-card p-8 rounded-3xl text-center hidden">
+        <div class="mb-5 relative inline-block">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center mx-auto shadow-lg pulse-heart">
+                <i class="fas fa-heart text-3xl text-white"></i>
+            </div>
+        </div>
+
+        <h1 class="text-2xl sm:text-3xl font-extrabold mb-1 tracking-wide neon-text">Приватний Портал</h1>
+        <p class="text-pink-200/70 text-xs sm:text-sm mb-6">Введіть своє ім'я для доступу</p>
+
+        <!-- Форма входу -->
+        <form onsubmit="handleFormLogin(event)" class="space-y-4 mb-6">
+            <div>
+                <input type="text" id="login-name" placeholder="Твоє ім'я (напр. Ліза)" required
+                    class="w-full px-4 py-3 rounded-2xl input-glass text-sm text-pink-100 placeholder-pink-300/40 focus:outline-none">
+            </div>
+            <div>
+                <input type="password" id="login-pass" placeholder="Секретний пароль (опціонально)" 
+                    class="w-full px-4 py-3 rounded-2xl input-glass text-sm text-pink-100 placeholder-pink-300/40 focus:outline-none">
+            </div>
+            <button type="submit" class="w-full py-3.5 neon-btn-yes rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 active:scale-95 transition-all">
+                <span>Увійти</span>
+                <i class="fas fa-arrow-right text-xs"></i>
+            </button>
+        </form>
+
+        <div class="relative flex py-2 items-center mb-5">
+            <div class="flex-grow border-t border-pink-500/20"></div>
+            <span class="flex-shrink mx-3 text-[11px] text-pink-300/60 uppercase font-semibold">або для автора</span>
+            <div class="flex-grow border-t border-pink-500/20"></div>
+        </div>
+
+        <!-- Блок швидкого копіювання посилання -->
+        <div class="glass-panel p-4 rounded-2xl border-pink-500/30 text-left space-y-2">
+            <label class="block text-xs font-semibold text-pink-300 flex items-center justify-between">
+                <span><i class="fas fa-link mr-1"></i> Пряме посилання для Лізи:</span>
+            </label>
+            <div class="flex gap-2">
+                <input type="text" id="liza-link-input" readonly class="w-full px-3 py-2 rounded-xl bg-black/60 border border-pink-500/30 text-xs font-mono text-pink-200 focus:outline-none">
+                <button onclick="copyLizaLink()" class="neon-btn-yes px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-1.5 active:scale-95">
+                    <i class="fas fa-copy"></i>
+                    <span>Копіювати</span>
+                </button>
+            </div>
+            <p class="text-[11px] text-pink-200/50">Надішли їй це посилання — вона відкриє його і одразу побачить запитання без входу!</p>
+        </div>
+    </div>
+
+
+    <!-- ================= 2. ОСНОВНИЙ ЕКРАН З ПИТАННЯМ ДЛЯ ЛІЗИ ================= -->
+    <div id="screen-question" class="z-10 w-full max-w-lg glass-card p-8 sm:p-10 rounded-3xl text-center hidden relative overflow-hidden">
+        
+        <div class="inline-block px-4 py-1.5 rounded-full glass-panel text-xs text-pink-300 font-semibold mb-6 tracking-wider uppercase border-pink-400/30">
+            <i class="fas fa-sparkles text-amber-300 mr-1.5"></i> Особливе запитання
+        </div>
+
+        <div class="text-6xl mb-4 pulse-heart inline-block">
+            💖
+        </div>
+
+        <h2 id="main-question-text" class="text-3xl sm:text-4xl font-extrabold mb-3 leading-tight neon-text">
+            Ліза, ти любиш мене? ❤️
+        </h2>
+
+        <p id="sub-text" class="text-pink-200/80 mb-8 text-sm sm:text-base min-h-[28px] flex items-center justify-center font-medium">
+            Відповідай щиро... ✨
+        </p>
+
+        <!-- Блок кнопок -->
+        <div id="buttons-container" class="relative min-h-[200px] flex flex-col sm:flex-row items-center justify-center gap-6 p-4">
+            <!-- Кнопка ТАК -->
+            <button id="btn-yes" onclick="handleYesClick()" class="neon-btn-yes px-9 py-4 rounded-2xl font-bold text-xl text-white z-20 flex items-center justify-center gap-2">
+                <span>ТАК! 🥰</span>
+            </button>
+
+            <!-- Кнопка НІ -->
+            <button id="btn-no" 
+                    onmouseenter="dodgeNoButton()" 
+                    onclick="dodgeNoButton()" 
+                    ontouchstart="dodgeNoButton(event)" 
+                    class="px-8 py-4 rounded-2xl font-bold text-base bg-gray-800/80 text-gray-300 border border-gray-600/50 z-10 shadow-lg">
+                <span id="no-btn-text">НІ 🙈</span>
+            </button>
+        </div>
+
+        <div id="hints-container" class="mt-4 text-xs font-semibold text-pink-300/80 italic min-h-[24px]">
+            <!-- Динамічні підказки при спробах втечі -->
+        </div>
+    </div>
+
+
+    <!-- ================= 3. ФІНАЛЬНИЙ ЕКРАН З ВІДПОВІДДЮ ================= -->
+    <div id="screen-love" class="z-10 w-full max-w-lg glass-card p-8 sm:p-10 rounded-3xl text-center hidden relative">
+        <div class="text-7xl mb-4 animate-bounce">🥰</div>
+        
+        <h2 class="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-pink-400 to-purple-300 font-handwriting mb-4">
+            Я знав! Я тебе теж дуууже сильно люблю! ❤️✨
+        </h2>
+
+        <div class="my-6 p-6 glass-panel rounded-2xl text-left space-y-3 border-pink-400/30 shadow-inner">
+            <p class="text-pink-100 leading-relaxed text-sm sm:text-base">
+                Ти робиш кожен мій день яскравим, теплим та особливим. Дякую тобі за твою посмішку та за те, що ти є в моєму житті! 🌹
+            </p>
+            <p class="text-pink-200/90 italic text-xs sm:text-sm text-right font-semibold">
+                — З найніжнішими почуттями 💕
+            </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="glass-panel p-3 rounded-2xl text-center hover:scale-105 transition-all">
+                <div class="text-2xl mb-1">👑</div>
+                <div class="text-[10px] font-bold text-pink-300 uppercase">Найкраща</div>
+            </div>
+            <div class="glass-panel p-3 rounded-2xl text-center hover:scale-105 transition-all">
+                <div class="text-2xl mb-1">💫</div>
+                <div class="text-[10px] font-bold text-pink-300 uppercase">Моє Сонце</div>
+            </div>
+            <div class="glass-panel p-3 rounded-2xl text-center hover:scale-105 transition-all">
+                <div class="text-2xl mb-1">♾️</div>
+                <div class="text-[10px] font-bold text-pink-300 uppercase">Назавжди</div>
+            </div>
+        </div>
+
+        <button onclick="restartApp()" class="px-6 py-2.5 glass-panel hover:bg-pink-500/20 text-xs rounded-xl text-pink-200 transition-all border border-pink-400/30">
+            <i class="fas fa-redo mr-2"></i>Пройти ще раз
+        </button>
+    </div>
+
+
+    <!-- ================= 4. СЕКРЕТНА АДМІН-ПАНЕЛЬ ================= -->
+    <div id="screen-admin" class="z-10 w-full max-w-md glass-card p-8 rounded-3xl hidden">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-pink-500/20">
+            <div>
+                <h2 class="text-lg font-bold text-pink-300"><i class="fas fa-chart-line mr-2"></i>Кабінет Автора</h2>
+                <p class="text-xs text-pink-200/60">Моніторинг результатів</p>
+            </div>
+            <button onclick="window.location.href = getCleanUrl()" class="px-3 py-1.5 glass-panel text-xs rounded-lg text-pink-300 hover:bg-red-500/20">
+                Вийти <i class="fas fa-sign-out-alt ml-1"></i>
+            </button>
+        </div>
+
+        <div class="space-y-4 mb-6">
+            <div class="glass-panel p-4 rounded-2xl flex justify-between items-center">
+                <span class="text-xs text-gray-300">Статус відповіді:</span>
+                <span id="admin-status" class="text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-300">Чекаємо відповіді...</span>
+            </div>
+
+            <div class="glass-panel p-4 rounded-2xl flex justify-between items-center">
+                <span class="text-xs text-gray-300">Спроб натиснути "НІ":</span>
+                <span id="admin-attempts" class="text-base font-bold text-pink-400">0</span>
+            </div>
+
+            <div class="glass-panel p-4 rounded-2xl flex justify-between items-center">
+                <span class="text-xs text-gray-300">Останній вхід Лізи:</span>
+                <span id="admin-last-login" class="text-xs text-pink-200 font-mono">Ще не входила</span>
+            </div>
+        </div>
+
+        <button onclick="goToLizaPage()" class="w-full py-3 neon-btn-yes rounded-xl font-bold text-xs text-white transition-all border border-purple-400/30 mb-3 shadow-lg">
+            Перейти до сторінки з питанням 🚀
+        </button>
+        <button onclick="resetData()" class="w-full py-2.5 glass-panel hover:bg-red-500/20 rounded-xl text-xs text-red-300 transition-all">
+            Скинути статистику 🔄
+        </button>
+    </div>
+
+
+    <script>
+        // Стан додатка
+        let state = {
+            noAttempts: parseInt(localStorage.getItem('liza_no_attempts') || '0'),
+            isAnswered: localStorage.getItem('liza_answered') === 'true',
+            lastLogin: localStorage.getItem('liza_last_login') || null,
+            yesScale: 1,
+            noScale: 1
+        };
+
+        const noMessages = [
+            "Ти впевнена? 🤔",
+            "Спробуй ще раз 😜",
+            "Неможливо натиснути! 🙈",
+            "Ну будь ласка 🥺",
+            "ТАК все одно ближче! 🔥",
+            "Без шансів, тільки ТАК! ❤️",
+            "Я все одно тебе люблю! 🥰"
+        ];
+
+        // Звукові ефекти Web Audio API (без зовнішніх файлів)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playPopSound() {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch (e) {}
+        }
+
+        function playWinFanfare() {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.4);
+                    }, idx * 120);
+                });
+            } catch (e) {}
+        }
+
+        // Ініціалізація зоряного фону
+        function initParticles() {
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            class Particle {
+                constructor() { this.reset(); }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2.2 + 0.5;
+                    this.speedX = Math.random() * 0.4 - 0.2;
+                    this.speedY = Math.random() * -0.6 - 0.2;
+                    this.alpha = Math.random() * 0.7 + 0.2;
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.y < 0 || this.x < 0 || this.x > canvas.width) {
+                        this.reset();
+                        this.y = canvas.height;
+                    }
+                }
+                draw() {
+                    ctx.fillStyle = `rgba(244, 114, 182, ${this.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < 75; i++) particles.push(new Particle());
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // Фонова генерація сердечок
+        function createFallingHearts() {
+            setInterval(() => {
+                const heart = document.createElement('div');
+                heart.classList.add('heart-particle');
+                heart.innerHTML = ['❤️', '💖', '✨', '🌸', '💕'][Math.floor(Math.random() * 5)];
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                heart.style.fontSize = (Math.random() * 14 + 12) + 'px';
+                document.body.appendChild(heart);
+
+                setTimeout(() => heart.remove(), 7000);
+            }, 650);
+        }
+
+        function getCleanUrl() {
+            return window.location.origin + window.location.pathname;
+        }
+
+        // Зчитування URL-параметрів
+        function handleUrlRouting() {
+            const params = new URLSearchParams(window.location.search);
+            const userParam = (params.get('role') || params.get('user') || params.get('to') || '').toLowerCase();
+
+            // Встановлюємо пряме посилання для Лізи
+            const lizaLink = getCleanUrl() + '?role=liza';
+            document.getElementById('liza-link-input').value = lizaLink;
+
+            if (userParam === 'liza') {
+                // Вхід за посиланням для Лізи
+                localStorage.setItem('liza_last_login', new Date().toLocaleString('uk-UA'));
+                if (state.isAnswered) {
+                    showScreen('screen-love');
+                } else {
+                    showScreen('screen-question');
+                }
+            } else if (userParam === 'admin' || userParam === 'author') {
+                // Секретна адмін-панель
+                updateAdminDashboard();
+                showScreen('screen-admin');
+            } else {
+                // Головний фейковий вхід
+                showScreen('screen-login');
+            }
+        }
+
+        function handleFormLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('login-name').value.trim().toLowerCase();
+            const pass = document.getElementById('login-pass').value.trim().toLowerCase();
+
+            if (name.includes('ліза') || name.includes('liza')) {
+                localStorage.setItem('liza_last_login', new Date().toLocaleString('uk-UA'));
+                if (state.isAnswered) {
+                    showScreen('screen-love');
+                } else {
+                    showScreen('screen-question');
+                }
+            } else if (name.includes('автор') || name.includes('данило') || pass === '1234' || pass === 'love') {
+                updateAdminDashboard();
+                showScreen('screen-admin');
+            } else {
+                // Будь-який інший вхід вважається Лізою
+                localStorage.setItem('liza_last_login', new Date().toLocaleString('uk-UA'));
+                showScreen('screen-question');
+            }
+        }
+
+        function showScreen(screenId) {
+            ['screen-login', 'screen-question', 'screen-love', 'screen-admin'].forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('fade-in');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        function copyLizaLink() {
+            const input = document.getElementById('liza-link-input');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showToast("Пряме посилання скопійовано! 💌");
+        }
+
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3200);
+        }
+
+        function goToLizaPage() {
+            window.location.search = '?role=liza';
+        }
+
+        function updateAdminDashboard() {
+            document.getElementById('admin-attempts').innerText = state.noAttempts;
+            document.getElementById('admin-last-login').innerText = localStorage.getItem('liza_last_login') || 'Ще не входила';
+            
+            const statusEl = document.getElementById('admin-status');
+            if (state.isAnswered) {
+                statusEl.innerText = "Відповіла ТАК! ❤️";
+                statusEl.className = "text-xs font-bold px-3 py-1 rounded-full bg-green-500/20 text-green-300 border border-green-400/30";
+            } else {
+                statusEl.innerText = "Чекаємо відповіді...";
+                statusEl.className = "text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-400/30";
+            }
+        }
+
+        // Логіка втечі кнопки "НІ"
+        function dodgeNoButton(e) {
+            if (e) e.preventDefault();
+            playPopSound();
+
+            state.noAttempts++;
+            localStorage.setItem('liza_no_attempts', state.noAttempts);
+
+            const btnNo = document.getElementById('btn-no');
+            const btnYes = document.getElementById('btn-yes');
+            const container = document.getElementById('buttons-container');
+            const hints = document.getElementById('hints-container');
+            const noText = document.getElementById('no-btn-text');
+
+            // Збільшуємо кнопку ТАК, зменшуємо НІ
+            state.yesScale += 0.24;
+            state.noScale = Math.max(0.4, state.noScale - 0.08);
+
+            btnYes.style.transform = `scale(${state.yesScale})`;
+
+            const containerRect = container.getBoundingClientRect();
+            const maxX = containerRect.width / 2 - 50;
+            const maxY = containerRect.height / 2 - 25;
+
+            const randomX = (Math.random() - 0.5) * maxX * 2;
+            const randomY = (Math.random() - 0.5) * maxY * 2;
+
+            btnNo.style.transform = `translate(${randomX}px, ${randomY}px) scale(${state.noScale})`;
+
+            const msgIndex = Math.min(state.noAttempts - 1, noMessages.length - 1);
+            noText.innerText = noMessages[msgIndex];
+            hints.innerText = `Спроб втекти від кохання: ${state.noAttempts} 😜`;
+        }
+
+        // Натискання "ТАК!"
+        function handleYesClick() {
+            playWinFanfare();
+            state.isAnswered = true;
+            localStorage.setItem('liza_answered', 'true');
+
+            showScreen('screen-love');
+            launchConfetti();
+        }
+
+        // Конфетті салют
+        function launchConfetti() {
+            const duration = 4 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 7,
+                    angle: 60,
+                    spread: 65,
+                    origin: { x: 0 },
+                    colors: ['#ec4899', '#a855f7', '#ffffff', '#f472b6']
+                });
+                confetti({
+                    particleCount: 7,
+                    angle: 120,
+                    spread: 65,
+                    origin: { x: 1 },
+                    colors: ['#ec4899', '#a855f7', '#ffffff', '#f472b6']
+                });
+
+                if (Date.now() < end) requestAnimationFrame(frame);
+            })();
+        }
+
+        function restartApp() {
+            state.noAttempts = 0;
+            state.yesScale = 1;
+            state.noScale = 1;
+
+            const btnYes = document.getElementById('btn-yes');
+            const btnNo = document.getElementById('btn-no');
+            btnYes.style.transform = 'scale(1)';
+            btnNo.style.transform = 'translate(0px, 0px) scale(1)';
+            document.getElementById('no-btn-text').innerText = 'НІ 🙈';
+            document.getElementById('hints-container').innerText = '';
+
+            showScreen('screen-question');
+        }
+
+        function resetData() {
+            localStorage.clear();
+            state.noAttempts = 0;
+            state.isAnswered = false;
+            updateAdminDashboard();
+            showToast("Статистику успішно скинуто!");
+        }
+
+        window.onload = function() {
+            initParticles();
+            createFallingHearts();
+            handleUrlRouting();
+        };
+    </script>
+</body>
+</html>
